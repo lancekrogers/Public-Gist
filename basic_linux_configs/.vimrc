@@ -54,20 +54,47 @@ nnoremap <leader>ls :ls<CR>
 
 " Filetype specific settings
 aug python
-  " Filetype python.vim overwrites this
-  au FileType python setlocal ts=4 sts=4 sw=4 expandtab
-  set autoindent
-  set smartindent
-  " Set make program for Python files
-  au FileType python setlocal makeprg=pyflakes\ %
-  " Set errorformat for pyflakes
-  au FileType python setlocal errorformat=%f:%l:%c:\ %m
-  " Automatically run pyflakes on buffer write
-  au BufWritePost *.py silent! make | cwindow
+    " Filetype python.vim overwrites this
+    au FileType python setlocal ts=4 sts=4 sw=4 expandtab
+    set autoindent
+    set smartindent
+
+    " Set make program for Python files
+    au FileType python setlocal makeprg=pyflakes\ %
+
+    " Set errorformat for pyflakes
+    au FileType python setlocal errorformat=%f:%l:%c:\ %m
+
+    " Automatically run pyflakes on buffer write
+    au BufWritePost *.py silent! make | cwindow
+
+    " Define the Black function
+    function! Black()
+        let l:current_view = winsaveview()
+        " Format the buffer using black and capture the output
+        let l:tempfile = tempname()
+        call writefile(getline(1, '$'), l:tempfile)
+        let l:output = system('black --quiet --line-length 120 ' . shellescape(l:tempfile) . ' && cat ' . shellescape(l:tempfile))
+        " Check if black made any changes
+        if v:shell_error != 0
+            " Display the error message
+            echohl ErrorMsg | echo "Black failed to format the file" | echohl None
+        else
+            " Read the formatted content back into the buffer
+            silent! %delete _
+            silent! execute 'read !cat ' . shellescape(l:tempfile)
+            " Restore the view position
+            call winrestview(l:current_view)
+            " Show success message in statusline
+            echo "Black: file formatted"
+        endif
+        call delete(l:tempfile)
+    endfunction
+
+    " Automatically run black on buffer write
+    au BufWritePre *.py call Black()
 aug end
 
-" Define a command to run pyflakes and populate the quickfix list
-command! Pyflakes :w<CR>:make<CR>
 
 " Key mappings for quickfix navigation
 nnoremap <silent> <leader>cn :cnext<CR>
@@ -106,6 +133,7 @@ nnoremap <silent> <leader>j :call JumpToIndex()<CR>
 function! ToggleMouse()
   if &mouse == 'a'
     set mouse=
+    echo "Mouse support disabled"
   else
     set mouse=a
     echo "Mouse support enabled"
@@ -114,3 +142,45 @@ endfunction
 
 " Python linting with pyflakes
 command! Pyflakes :w<CR>:make<CR>
+
+
+function! Black()
+  let l:current_view = winsaveview()
+  silent! execute '%!black --line-length=120 -S'
+  call winrestview(l:current_view)
+endfunction
+
+
+function! GotoProjectDefinition()
+    let symbol = expand('<cword>')
+    let path = getcwd()
+    py3 << EOF
+import ast
+import os
+import vim
+
+def find_definition(symbol, path):
+    for root, _, files in os.walk(path):
+        for file in files:
+            if file.endswith(".py"):
+                filepath = os.path.join(root, file)
+                with open(filepath, "r", encoding="utf-8") as f:
+                    try:
+                        tree = ast.parse(f.read(), filename=file)
+                        for node in ast.walk(tree):
+                            if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.name == symbol:
+                                print(f"{filepath}:{node.lineno}")
+                                vim.command(f'call setqflist([{{"filename": "{filepath}", "lnum": {node.lineno}}}], "r")')
+                                vim.command(f'edit +{node.lineno} {filepath}')
+                                return
+                    except SyntaxError:
+                        continue
+    print("Definition not found")
+
+symbol = vim.eval("symbol")
+path = vim.eval("path")
+find_definition(symbol, path)
+EOF
+endfunction
+
+nnoremap <silent> <leader>gd :call GotoProjectDefinition()<CR>
