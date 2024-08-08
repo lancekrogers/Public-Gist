@@ -1,0 +1,65 @@
+TMUX Cheatsheet
+===============
+
+Sessions
+--------
+tmux                    # start a new session
+tmux new -s <name>      # start a new session with the name
+tmux ls                 # list sessions
+tmux attach -t <name>   # attach to a session
+tmux kill-session -t <name> # kill a session
+tmux new-session -s <session-name> -n <window-name> # start a new session with the window name
+
+Windows
+-------
+Ctrl-b c                # create a new window
+Ctrl-b w                # list windows
+Ctrl-b n                # next window
+Ctrl-b p                # previous window
+Ctrl-b 0-9              # move to window 0-9
+Ctrl-b ,                # rename the current window
+Ctrl-b &                # kill the current window
+
+Panes
+-----
+Ctrl-b %                # split the window vertically
+Ctrl-b "                # split the window horizontally
+Ctrl-b o                # swap panes
+Ctrl-b x                # kill the current pane
+Ctrl-b z                # toggle pane zoom
+Ctrl-b q                # display pane numbers
+Ctrl-b {                # move the current pane left
+Ctrl-b }                # move the current pane right
+Ctrl-b ;                # toggle between the current and previous pane
+Ctrl-b !                # break the current pane into a new window
+Ctrl-b Ctrl-o           # rotate panes
+
+Copy Mode
+---------
+Ctrl-b [                # enter copy mode
+Ctrl-b ]                # paste
+Ctrl-b v                # begin selection
+Ctrl-b y                # copy selection
+Ctrl-b PgUp             # enter copy mode and scroll up
+Ctrl-b :                # open command prompt
+
+Resizing Panes
+--------------
+Ctrl-b Opt-Up               # resize the current pane up
+Ctrl-b Opt-Down             # resize the current pane down
+Ctrl-b Opt-Left             # resize the current pane left
+Ctrl-b Opt-Right            # resize the current pane right
+
+Synchronization
+---------------
+Ctrl-b :setw synchronize-panes on  # enable synchronization
+Ctrl-b :setw synchronize-panes off # disable synchronization
+
+Miscellaneous
+-------------
+Ctrl-b d                # detach from the current session
+Ctrl-b ?                # list all key bindings
+Ctrl-b :                # enter command mode
+Ctrl-b t                # show the time
+Ctrl-b r                # reload the tmux configuration
+Ctrl-b s                # select a session to attach to
